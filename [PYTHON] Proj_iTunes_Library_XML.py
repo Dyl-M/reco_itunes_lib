@@ -36,7 +36,8 @@ alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NWL": "A
          "Streex": "Razihel", "Jack Ü": ["Skrillex", "Diplo"], "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk",
          "Will & Tim": "NewGamePlus", "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
          "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"],
-         "Casseurs Flowters": ["OrelSan", "Gringe"], "NWYR": "W&W", "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY"}
+         "Casseurs Flowters": ["OrelSan", "Gringe"], "NWYR": "W&W", "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY",
+         "Sinnoh Fusion Ensemble": "insaneintherainmusic"}
 
 track_ignore_lst = (
     '[2017 Trap Reboot]', '[2K16 Edit]', "[90's Remix]", '[Acoustic]', '[Album Version]', '[Bonus Track]', '[Bonus]',
@@ -59,12 +60,12 @@ cara_del_remix = (
     " Re-Crank", "'s 2k17 Bootleg", " Bootleg", "'s VIP Mix", "'s VIP Remix", " Rework", " UMF 2017 Mashup",
     " UMF Edit", "'s Swede Remix", " Flip", " FLIP", " Heaven Trap Remix", " VIP Mix", " Power-Up",
     "'s Disco House Remix", " ReBoot", " Vocal Edit", " Extended Remix", " Festival Mix", " Brown Note Remix",
-    " 2016 Remix", " Remix", " Mix", " Edit", " Mashup")
+    " 2016 Remix", " Remix", " Mix", " Edit", " Mashup", " VIP Edit")
 
 
 # __ DEFINITION DE FONCTIONS __
 
-def itunes_lib_xml_to_lst(xml_path="C:/Users/USER/Music/iTunes/iTunes Music Library.xml"):
+def itunes_lib_xml_to_lst(xml_path):
     biblio = Library(xml_path)
     itunes_data_ld = []
     i = 0
@@ -82,8 +83,7 @@ def itunes_lib_xml_to_lst(xml_path="C:/Users/USER/Music/iTunes/iTunes Music Libr
     return itunes_data_ld
 
 
-def db_track_csv(csv_name="iTunes_Library.csv",
-                 xml_path="C:/Users/USER/Music/iTunes/iTunes Music Library.xml"):
+def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
     lst_data_base = itunes_lib_xml_to_lst(xml_path)
     col_names = lst_data_base[0].keys()
     try:
@@ -146,7 +146,7 @@ def pre_build_db_artist(xml_path):
     return artist_step3
 
 
-def db_artist_csv(xml_path="C:/Users/USER/Music/iTunes/iTunes Music Library.xml"):
+def db_artist_csv(xml_path):
     biblio = Library(xml_path)
     lst_genres = []
     pre_db_list = pre_build_db_artist(xml_path)
@@ -182,12 +182,15 @@ def db_artist_csv(xml_path="C:/Users/USER/Music/iTunes/iTunes Music Library.xml"
 
 # __ CORPS PRINCIPAL DU PROGRAMME __
 
+xml = "../../../Music/iTunes/iTunes Music Library.xml"
+library = Library(xml)
+
 # [Orchestral Suite] / [Cover] / [Ochestral Cover]
 
 # mon_itunes = itunes_lib_xml_to_lst()
 # print(mon_itunes)
 
-# db_track_csv()
+# db_track_csv(xml)
 
 # db_artist_csv()
 
