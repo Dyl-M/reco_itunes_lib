@@ -45,7 +45,7 @@ import csv
 """ - GLOBAL VARIABLES / DATA | VARIABLES / DONNEES GLOBALES - """
 
 # Ensemble des duos de la base de données, sert au bon référencement des duos comme "une seule entité artiste"
-duos = {"A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Beyond", "Amadou & Mariam",
+duos = ["A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Beyond", "Amadou & Mariam",
         "Asketa & Natan Chaim", "Bigflo & Oli", "Case & Point", "DJ KUBA & NEITAN", "Dimitri Vangelis & Wyman",
         "Dimitri Vegas & Like Mike", "Dodge & Fuski", "Dzeko & Torres", "Edward Sharpe & The Magnetic Zeros",
         "Gent & Jawns", "Holl & Rush", "Jack & Jordan", "Jaxx & Vega", "Jewelz & Sparks", "Klauss & Turino",
@@ -53,7 +53,7 @@ duos = {"A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Be
         "Nico & Vinz", "PBH & Jack Shizzle", "Paris & Simo", "Pep & Rash", "Petterson & Findus", "Phats & Small",
         "Rave & Crave", "Raven & Kreyn", "Relanium & Deen West", "Rico & Miella", "Riggi & Piros", "Slips & Slurs",
         "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame", "Vargas & Lagola",
-        "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"}
+        "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"]
 
 # Ensemble des alias d'artiste "fort" : se rapporte à un autre nom d'artiste actif, ou à un side-project actif ou non
 # déclaré comme arrêté.
@@ -72,7 +72,8 @@ weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NWL
               "Lush & Simon": ["Simon Says", "Zen/It"], "Matthew Ros": "MWRS", "Grant Bowtie": "Grant",
               "M.E.G. & N.E.R.A.K.": "DJ M.E.G.", "MEG / NERAK": "DJ M.E.G.", "Dzeko & Torres": "Dzeko",
               "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN",
-              "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus"}
+              "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus",
+              "DBSTF": "D-Block & S-te-Fan"}
 
 # Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
 not_remix_tag = (
@@ -90,7 +91,7 @@ not_remix_tag = (
 
 # Caractère de séparation d'artiste (plus de détail prochainement)
 cara_sep_artist = (
-    " (feat. ", " (w/ ", " + ", " w/ ", " × ", " | ", " vs. ", " V/S ", " VS ", " V.S ", " VS. ", " vs", "),")
+    " (feat. ", " (w/ ", " + ", " w/ ", " × ", " | ", " vs. ", " V/S ", " VS ", " V.S ", " VS. ", " vs ", "), ")
 
 # Caractère à supprimer dans le champ "name" pour les remix, pour extraire les remixers.
 cara_del_remix = (
@@ -238,15 +239,57 @@ def build_artist_db(itunes_xml_path):
     library = Library(itunes_xml_path).songs.values()
     # Objet de type dictionnaire conservant toutes les musiques avec toutes les métadonnées associées.
     for song in library:
-        artist = song.artist
-        if artist[-1] == ')':
-            artist = artist[:-1]
-        for sepa in cara_sep_artist:  # On boucle sur la chaîne de caractère pour bien séparer chaque artiste.
-            artist = artist.replace(sepa, ", ")
-        print(artist)
+        artist_ind = formating_artist(song.artist)  # Appel à la fonction de formatage
+        print(artist_ind)
         print(song.name)
         print("")
     return None
+
+
+# Fonction de formatage des artistes en une liste d'artiste.
+# La fonction sépare les artistes en fonction chaines de caractères séparatrice dans le champ "Artiste", comme le 'feat'
+# qui arrive après le nom de l'artiste principal du morceau (ex : David Guetta feat. Sia - Titanium) ou la croix '×'
+# (assez souvent simplifiée en simple "x" ailleurs, c'est juste moi qui préfère l'esthétique de la croix) séparant
+# souvant 2 duos pour mieux les distiguer en présence du "&". Ces chaines sont toutes référencées dans le tuple
+# "cara_sep_artist", avec souvent une parenthèse les précédant, propre à ma gestion du champ "Artiste" que j'ai adopté
+# (les artistes secondaires étant toujours écrit entre parenthèse).
+
+def formating_artist(artist_object):
+    artist_txt = artist_object
+    if artist_txt[-1] == ')':  # Suppression d'éventuelle dernière parenthèse, en présence d'artiste secondaire
+        artist_txt = artist_txt[:-1]
+    for sepa in cara_sep_artist:  # On boucle sur la chaîne de caractère pour bien séparer chaque artiste.
+        artist_txt = artist_txt.replace(sepa, ", ")
+    artist_lst = finding_duos(artist_txt)  # Appel à la fonction qui distingue les duos s'écrivant avec un "&"
+    return artist_lst
+
+
+# Fonction permettant la détection des duos dans une liste d'artiste.
+# Cette fonction sert détecter les duos dans le champ artiste si ce champ présente un "&". Puisque l'esperluette (c'est
+# son nom) peut aussi bien servir d'élément de séparation entre 2 artistes / entitées distinctes (ex :
+# Afrojack & Martin Garrix - Turn Up The Speakers) que d'élément purement esthétique dans le nom d'un duo (ex :
+# Tom & Jame - Hold Up). Afrojack et Martin Garrix étant deux entités à part entière, là où Tom & Jame n'en forme qu'une
+# seule. C'est d'autant plus complexe (sinon chiant) qu'un duo peut collaborer avec artiste seul (ex : Dimitri Vegas &
+# Like Mike & Martin Garrix - Tremor, et 2 fois "&" dans le champ "Artiste"), voir même que 2 duos puissent collaborer
+# ensemble (ex : Holl & Rush × Raven & Kreyn (feat. Ryan Konline) - Faith). Les duos sont référencés dans la liste de
+# même nom. Cette liste est succeptible d'évoluer avec les ajouts à la bibliothèque iTunes.
+
+def finding_duos(artist_txt):
+    artist_lst = []  # Liste à retourner
+    for duo in duos:  # Bouclage sur les duos pour tous les détecter correctement.
+        if duo in artist_txt:
+            # Si un duo est dans le champ "Artiste" pré-traité (string), alors on l'ajoute à la liste à retourner, et on
+            # le supprime de la chaîne de caractère en traitement.
+            artist_lst.append(duo)
+            artist_txt = artist_txt.replace(duo, "")
+    # On sépare les artistes restant dans la chaîne de caractère, par le "&" et la virgule, et on supprime d'éventuels
+    # doublons.
+    artist_lst = list(set(artist_lst + artist_txt.replace(" & ", ", ").split(", ")))
+    # Les seules doublons restant sont en fait des chaines de caractères vides issues de la boucle précédente. On va
+    # donc les supprimer.
+    if "" in artist_lst:
+        artist_lst.remove("")
+    return sorted(artist_lst)  # Retour de la liste d'artiste triée.
 
 
 """ - PROGRAM MAIN BODY | CORPS PRINCIPAL DU PROGRAMME - """
@@ -340,7 +383,7 @@ build_artist_db(xml)
 
 # Rien pour le moment (reconstruction de fonction en cours, voir plus haut).
 
-""" - ELEMENTS IN /songs/ OBJECT | ELEMENTS DANS UN OBJET /songs/ """
+""" - ELEMENTS IN /song/ OBJECT | ELEMENTS DANS UN OBJET /songs/ """
 
 # name(String)
 # album = None(String)
