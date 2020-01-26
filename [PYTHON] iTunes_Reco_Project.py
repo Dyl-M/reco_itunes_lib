@@ -1,21 +1,50 @@
-# __ INFORMATION SCRIPT __
-
-# !/usr/bin/python3
-# -*- coding:utf8 -*-
-""" - Bref, j'ai hacké iTunes (c'est faux) - """
-
-# fichier  : [PYTHON] Proj_iTunes_Library.XML.py
-# Auteur : MONFRET Dylan
-
-# __ IMPORTATION DE FONCTION EXTERNE & PACKAGE __
-
 from libpytunes import Library
 from datetime import datetime
 from time import mktime
 import csv
 
-# __ DONNEES GLOBALES __
+""" - SCRIPT INFORMATRION | INFORMATION SCRIPT - """
 
+# !/usr/bin/python3
+# -*- coding:utf8 -*-
+
+# Project Name: Recommendations based on iTunes libray
+# File Name: [PYTHON] iTunes_Reco_Project.py
+# Author: Dyl_M (MONFRET Dylan, GH: Dyl-M)
+# Project languages: Python / R (?)
+# Comment Language: Mostly in French for now / Majoritairement en français pour le moment
+
+# Ce script s'exécute avec le package "libpytunes" conçu par Liam Kaufman, permettant une lecture simplifié du fichier
+# de base de données "iTunes Library.xml". Un grand merci à lui.
+
+# Son GitHub : https://github.com/liamks
+# Lien direct du package : https://github.com/liamks/libpytunes
+
+""" - DISCLAIMER | AVERTISSEMENT - """
+
+# [EN]
+
+# This project will only deal with music from an iTunes database.
+
+# This project offers (or rather will offer) some analysis possibilities around the database we can build with iTunes.
+# As each user has his own way of arranging music with iTunes, the method of "cleaning" the data, the construction of
+# global variables or any other manipulation of the data would not necessarily make sense for a different library than
+# mine. Theoretically, I will comment enough on the project to make it understandable to everyone and the specifics of
+# my layout as well.
+
+# [FR]
+
+# Ce project ne traitera que les musiques d'une base de données iTunes.
+
+# Ce projet offre (ou plutôt offrira) des pistes d'analyse autour de la base données que nous pouvons construire avec
+# iTunes. Comme chaque utilisateur à sa propre manière d'agencer les musiques avec iTunes, la méthode de "nettoyage" des
+# données, la construction des variables globales ou toute autre manipulation des données n'aurait pas forcément de sens
+# pour une bibliothèque différente de la mienne. Théoriquement, je vais commenter suffisamment le projet pour qu'il soit
+# compréhensible de tous et que les spécificité de mon agencement le soit aussi.
+
+""" - GLOBAL VARIABLES / DATA | VARIABLES / DONNEES GLOBALES - """
+
+# Ensemble des duos de la base de données, sert au bon référencement des duos comme "une seule entité artiste"
 duos = {"A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Beyond", "Amadou & Mariam",
         "Asketa & Natan Chaim", "Bigflo & Oli", "Case & Point", "DJ KUBA & NEITAN", "Dimitri Vangelis & Wyman",
         "Dimitri Vegas & Like Mike", "Dodge & Fuski", "Dzeko & Torres", "Edward Sharpe & The Magnetic Zeros",
@@ -26,20 +55,27 @@ duos = {"A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Be
         "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame", "Vargas & Lagola",
         "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"}
 
-alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NWL": "Afrojack", "DJ Afrojack": "Afrojack",
-         "Ravitez": "Chico Rose", "GRX": "Martin Garrix", "Daffy Muffin": "Lucas & Steve",
-         "AREA21": ["Martin Garrix", "Maejor"], "Matthew Ros": "MWRS", "Kerafix & Vultaire": "KEVU",
-         "Dzeko & Torres": "Dzeko", "Lush & Simon": ["Simon Says", "Zen/It"], "M.E.G. & N.E.R.A.K.": "DJ M.E.G.",
-         "MEG / NERAK": "DJ M.E.G.", "Grant Bowtie": "Grant", "Chill Harris": "Kill Paris",
-         "Jayden Jaxx": "Crime Zcene", "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"], "X-Teef": "Stemalø",
-         "Paris & Simo": "Prince Paris", "VIRTUAL SELF": "Porter Robinson", "The Eden Project": "EDEN",
-         "Streex": "Razihel", "Jack Ü": ["Skrillex", "Diplo"], "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk",
-         "Will & Tim": "NewGamePlus", "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
+# Ensemble des alias d'artiste "fort" : se rapporte à un autre nom d'artiste actif, ou à un side-project actif ou non
+# déclaré comme arrêté.
+alias = {"Daffy Muffin": "Lucas & Steve", "AREA21": ["Martin Garrix", "Maejor"],
+         "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"], "VIRTUAL SELF": "Porter Robinson", "Streex": "Razihel",
+         "Jack Ü": ["Skrillex", "Diplo"], "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
          "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"],
          "Casseurs Flowters": ["OrelSan", "Gringe"], "NWYR": "W&W", "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY",
          "Sinnoh Fusion Ensemble": "insaneintherainmusic"}
 
-track_ignore_lst = (
+# Ensemble des alias secondaires dits "faibles" : se rapporte à un autre nom d'artiste dans la base de données ayant
+# peut de valeur pour l'analyse ou n'étant plus actif donc plus intéressant à suivre.
+weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NWL": "Afrojack",
+              "Jayden Jaxx": "Crime Zcene", "Chill Harris": "Kill Paris", "DJ Afrojack": "Afrojack",
+              "Ravitez": "Chico Rose", "GRX": "Martin Garrix", "Kerafix & Vultaire": "KEVU",
+              "Lush & Simon": ["Simon Says", "Zen/It"], "Matthew Ros": "MWRS", "Grant Bowtie": "Grant",
+              "M.E.G. & N.E.R.A.K.": "DJ M.E.G.", "MEG / NERAK": "DJ M.E.G.", "Dzeko & Torres": "Dzeko",
+              "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN",
+              "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus"}
+
+# Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
+not_remix_tag = (
     '[2017 Trap Reboot]', '[2K16 Edit]', "[90's Remix]", '[Acoustic]', '[Album Version]', '[Bonus Track]', '[Bonus]',
     '[CANCELED]', '[Celebration Club Mix]', '[Clip Version]', '[Club Mix]', '[Cover]', '[Dub Mix]',
     '[EDM × Metal Remix]', '[English Version]', '[Eurovision 2015 Live Version]', '[Evian Version]', '[Extended Mix]',
@@ -52,9 +88,11 @@ track_ignore_lst = (
     '[VIP Remix]', '[Violin Version]', '[Zen @coustic]', "[Orchestral Cover]", "[Orchestral Suite]",
     "[Electro House Remix]")
 
+# Caractère de séparation d'artiste (plus de détail prochainement)
 cara_sep_artist = (
-    " (feat. ", " (w/ ", " + ", " w/ ", " × ", " | ", " vs. ", " V/S ", " VS ", " V.S ", " VS. ", " vs ")
+    " (feat. ", " (w/ ", " + ", " w/ ", " × ", " | ", " vs. ", " V/S ", " VS ", " V.S ", " VS. ", " vs", "),")
 
+# Caractère à supprimer dans le champ "name" pour les remix, pour extraire les remixers.
 cara_del_remix = (
     "[", "]", " BONUS TRACK", "ADE Intro | ", " Remake", " Rebuild", " Blastersmash",
     " Re-Crank", "'s 2k17 Bootleg", " Bootleg", "'s VIP Mix", "'s VIP Remix", " Rework", " UMF 2017 Mashup",
@@ -62,9 +100,12 @@ cara_del_remix = (
     "'s Disco House Remix", " ReBoot", " Vocal Edit", " Extended Remix", " Festival Mix", " Brown Note Remix",
     " 2016 Remix", " Remix", " Mix", " Edit", " Mashup", " VIP Edit")
 
+""" - LOCAL FUNCTIONS | FONCTIONS LOCALES- """
 
-# __ DEFINITION DE FONCTIONS __
 
+# Fonction de base pour transformer la base de données iTunes en une liste de titre avec un identifiant et les
+# informations de base conservées sous la forme de dictionnaires (ID généré automatiquement, Titre, Album, Artiste ,
+# Artiste de l'Album, Genre, Année, Date d'ajout, Groupe (ici label, sinon case vide), Nombre de lecture).
 def itunes_lib_xml_to_lst(xml_path):
     biblio = Library(xml_path)
     itunes_data_ld = []
@@ -83,6 +124,8 @@ def itunes_lib_xml_to_lst(xml_path):
     return itunes_data_ld
 
 
+# Fonction d'export d'une base de données iTunes en .csv (fonctionne avec "itunes_lib_xml_to_list" et son format de
+# retour).
 def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
     lst_data_base = itunes_lib_xml_to_lst(xml_path)
     col_names = lst_data_base[0].keys()
@@ -96,6 +139,7 @@ def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
         print("I/O error")
 
 
+# Fonction de visualisation des tests pour exporter une liste en .txt.
 def list_to_txt(db_list, name_txt):
     with open(name_txt, 'w', encoding="utf-8-sig") as text_obj:
         for elem in db_list:
@@ -103,6 +147,7 @@ def list_to_txt(db_list, name_txt):
         text_obj.close()
 
 
+# [FONCTION REJETEES] Redéfinition en cours (voir plus bas)
 def pre_build_db_artist(xml_path):
     biblio = Library(xml_path)
     artist_step1 = []
@@ -146,6 +191,7 @@ def pre_build_db_artist(xml_path):
     return artist_step3
 
 
+# [FONCTION REJETEES] Redéfinition en cours (voir plus bas)
 def db_artist_csv(xml_path):
     biblio = Library(xml_path)
     lst_genres = []
@@ -180,10 +226,36 @@ def db_artist_csv(xml_path):
     # list_to_txt(post_db_list, "test1.txt")
 
 
-# __ CORPS PRINCIPAL DU PROGRAMME __
+# Fonction de nettoyage et de construction d'une base de donnéees d'artiste.
+# OBJECTIFS :
+#   - Séparer convenablement chaque artiste sur une même piste
+#   - Inclure les (potentielles) remixers comme artistes ayant participer à un morceaux.
+#   - Faire l'association avec les alias et "weak" alias (propriétés à définir)
+#   - Ajouter les artistes à la base de données avec le nombre de participation par genre.
+#   - Exporter le tout en .csv (optionnel).
+
+def build_artist_db(itunes_xml_path):
+    library = Library(itunes_xml_path).songs.values()
+    # Objet de type dictionnaire conservant toutes les musiques avec toutes les métadonnées associées.
+    for song in library:
+        artist = song.artist
+        if artist[-1] == ')':
+            artist = artist[:-1]
+        for sepa in cara_sep_artist:  # On boucle sur la chaîne de caractère pour bien séparer chaque artiste.
+            artist = artist.replace(sepa, ", ")
+        print(artist)
+        print(song.name)
+        print("")
+    return None
+
+
+""" - PROGRAM MAIN BODY | CORPS PRINCIPAL DU PROGRAMME - """
 
 xml = "../../../Music/iTunes/iTunes Music Library.xml"
-library = Library(xml)
+build_artist_db(xml)
+
+""" - TESTS - """
+# library = Library(xml)
 
 # [Orchestral Suite] / [Cover] / [Ochestral Cover]
 
@@ -225,49 +297,50 @@ library = Library(xml)
 #
 # print(tri2)
 
-xml = "../../../Music/iTunes/iTunes Music Library.xml"
-library = Library(xml)
-
 # print(sorted(track_ignore_lst))
 
 # C:\Users\USER\Documents\[!] PROJETS PERSONNELS\[ITUNES] Recommendations based on iTunes library
 # C:\Users\USER\Music\iTunes
 
-lst_remix = []
+# lst_remix = []
+#
+# for song in library.songs.values():
+#     if "[" in song.name:
+#         lst_remix.append(song.name)
+#
+# for song in sorted(lst_remix):
+#     decideur = True
+#     for tag in track_ignore_lst:
+#         if tag in song:
+#             decideur = False
+#     if not decideur:
+#         lst_remix.remove(song)
+#
+# for i, remix in enumerate(lst_remix):
+#     lst_remix[i] = remix[remix.find("["):]
+#
+# lst_remix_corrected = []
+#
+# for remix_corr in lst_remix:
+#     for c_del in cara_del_remix:
+#         if c_del in remix_corr:
+#             remix_corr = remix_corr.replace(c_del, "")
+#     for c_sep in cara_sep_artist:
+#         remix_corr = remix_corr.replace(c_sep, ", ")
+#     remix_corr = remix_corr.split(", ")
+#     if remix_corr not in lst_remix_corrected:
+#         lst_remix_corrected.append(remix_corr)
+#
+# lst_remix_corrected.sort()
+#
+# for remix in lst_remix_corrected:
+#     print(remix)
 
-for song in library.songs.values():
-    if "[" in song.name:
-        lst_remix.append(song.name)
+""" - REJECTED FUNCTIONS |  FONCTIONS REJETEES - """
 
-for song in sorted(lst_remix):
-    decideur = True
-    for tag in track_ignore_lst:
-        if tag in song:
-            decideur = False
-    if not decideur:
-        lst_remix.remove(song)
+# Rien pour le moment (reconstruction de fonction en cours, voir plus haut).
 
-for i, remix in enumerate(lst_remix):
-    lst_remix[i] = remix[remix.find("["):]
-
-lst_remix_corrected = []
-
-for remix_corr in lst_remix:
-    for c_del in cara_del_remix:
-        if c_del in remix_corr:
-            remix_corr = remix_corr.replace(c_del, "")
-    for c_sep in cara_sep_artist:
-        remix_corr = remix_corr.replace(c_sep, ", ")
-    remix_corr = remix_corr.split(", ")
-    if remix_corr not in lst_remix_corrected:
-        lst_remix_corrected.append(remix_corr)
-
-lst_remix_corrected.sort()
-
-for remix in lst_remix_corrected:
-    print(remix)
-
-""" - LISTE DES ELEMENTS TROUVABLES DANS L'OBJET DE TYPE/songs/ """
+""" - ELEMENTS IN /songs/ OBJECT | ELEMENTS DANS UN OBJET /songs/ """
 
 # name(String)
 # album = None(String)
