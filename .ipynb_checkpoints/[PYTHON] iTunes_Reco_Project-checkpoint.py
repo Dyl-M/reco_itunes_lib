@@ -8,44 +8,40 @@ import pandas
 
 # !/usr/bin/python3
 # -*- coding:utf8 -*-
-"""
-Project Name: Recommendations based on iTunes libray
-File Name: [PYTHON] iTunes_Reco_Project.py
-Author: Dyl_M (MONFRET Dylan, GH: Dyl-M)
-Project languages: Python / R (?)
-Comment Language: Mostly in French for now / Majoritairement en français pour le moment
 
-Ce script s'exécute avec le package "libpytunes" conçu par Liam Kaufman, permettant une lecture simplifié du fichier
-de base de données "iTunes Library.xml". Un grand merci à lui.
+# Project Name: Recommendations based on iTunes libray
+# File Name: [PYTHON] iTunes_Reco_Project.py
+# Author: Dyl_M (MONFRET Dylan, GH: Dyl-M)
+# Project languages: Python / R (?)
+# Comment Language: Mostly in French for now / Majoritairement en français pour le moment
 
-Son GitHub : https://github.com/liamks
-Lien direct du package : https://github.com/liamks/libpytunes
-"""
+# Ce script s'exécute avec le package "libpytunes" conçu par Liam Kaufman, permettant une lecture simplifié du fichier
+# de base de données "iTunes Library.xml". Un grand merci à lui.
+
+# Son GitHub : https://github.com/liamks
+# Lien direct du package : https://github.com/liamks/libpytunes
 
 """ - DISCLAIMER | AVERTISSEMENT - """
 
-"""
-[EN]
+# [EN]
 
-This project will only deal with music from an iTunes database.
+# This project will only deal with music from an iTunes database.
 
-This project offers (or rather will offer) some analysis possibilities around the database we can build with iTunes.
-As each user has his own way of arranging music with iTunes, the method of "cleaning" the data, the construction of
-global variables or any other manipulation of the data would not necessarily make sense for a different library than
-mine. Theoretically, I will comment enough on the project to make it understandable to everyone and the specifics of
-my layout as well.
+# This project offers (or rather will offer) some analysis possibilities around the database we can build with iTunes.
+# As each user has his own way of arranging music with iTunes, the method of "cleaning" the data, the construction of
+# global variables or any other manipulation of the data would not necessarily make sense for a different library than
+# mine. Theoretically, I will comment enough on the project to make it understandable to everyone and the specifics of
+# my layout as well.
 
-[FR]
+# [FR]
 
-Ce project ne traitera que les musiques d'une base de données iTunes.
+# Ce project ne traitera que les musiques d'une base de données iTunes.
 
-Ce projet offre (ou plutôt offrira) des pistes d'analyse autour de la base données que nous pouvons construire avec
-iTunes. Comme chaque utilisateur à sa propre manière d'agencer les musiques avec iTunes, la méthode de "nettoyage" des
-données, la construction des variables globales ou toute autre manipulation des données n'aurait pas forcément de sens
-pour une bibliothèque différente de la mienne. Théoriquement, je vais commenter suffisamment le projet pour qu'il soit
-compréhensible de tous et que les spécificité de mon agencement le soit aussi.
-
-"""
+# Ce projet offre (ou plutôt offrira) des pistes d'analyse autour de la base données que nous pouvons construire avec
+# iTunes. Comme chaque utilisateur à sa propre manière d'agencer les musiques avec iTunes, la méthode de "nettoyage" des
+# données, la construction des variables globales ou toute autre manipulation des données n'aurait pas forcément de sens
+# pour une bibliothèque différente de la mienne. Théoriquement, je vais commenter suffisamment le projet pour qu'il soit
+# compréhensible de tous et que les spécificité de mon agencement le soit aussi.
 
 """ - GLOBAL VARIABLES / DATA | VARIABLES / DONNEES GLOBALES - """
 
@@ -78,7 +74,7 @@ weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NLW
               "M.E.G. & N.E.R.A.K.": "DJ M.E.G.", "MEG / NERAK": "DJ M.E.G.", "Dzeko & Torres": "Dzeko",
               "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN",
               "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus",
-              "DBSTF": "D-Block & S-te-Fan", "Maître Gims": "GIMS"}
+              "DBSTF": "D-Block & S-te-Fan"}
 
 # Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
 not_remix_tag = (
@@ -165,24 +161,23 @@ def list_to_txt(db_list, name_txt):
         text_obj.close()
 
 
-"""
 # Fonction de nettoyage et de construction d'une base de donnéees d'artiste.
-
 # OBJECTIFS :
-#   - Séparer convenablement chaque artiste sur une même piste.
-#   - Inclure les (potentielles) remixers et compositeurs comme artistes ayant participer à un morceaux.
-#   - Faire l'association avec les alias et "weak" alias.
+#   - Séparer convenablement chaque artiste sur une même piste
+#   - Inclure les (potentielles) remixers comme artistes ayant participer à un morceaux.
+#   - Faire l'association avec les alias et "weak" alias (propriétés à définir)
 #   - Ajouter les artistes à la base de données avec le nombre de participation par genre.
 #   - Exporter le tout en .csv (optionnel).
-"""
 
-
-def build_artist_db(itunes_xml_path):
+def build_artist_db(itunes_xml_path, user_name="iTunes_User"):
     cpt_artist = 0
     already_added = {}
     library = Library(itunes_xml_path).songs.values()
     genres_list = list_of_genre(library)
-    data = []
+    data = [{"ID": "A0000", "Name": user_name}]
+    data[0].update({genre: 0 for genre in genres_list})
+    # noinspection PyTypeChecker
+    data[0].update(dict(TOTAL=0))
     # Objet de type dictionnaire conservant toutes les musiques avec toutes les métadonnées associées.
     for song in library:
         artist_org = formating_artist(song.artist)  # Appel à la fonction de formatage
@@ -191,15 +186,19 @@ def build_artist_db(itunes_xml_path):
         if song.composer is not None:
             all_artist.append(song.composer)
         all_artist = formating_with_alias(all_artist)
+        data[0][song.genre] += 1
+        data[0]["TOTAL"] += 1
         for un_artist in all_artist:
             if un_artist not in already_added:
                 cpt_artist += 1
                 already_added.update({un_artist: cpt_artist})
-                data.append({"Name": un_artist})
-                data[cpt_artist - 1].update({genre: 0 for genre in genres_list})
-                data[cpt_artist - 1][song.genre] += 1
+                data.append({"ID": "A{:04d}".format(cpt_artist), "Name": un_artist})
+                data[cpt_artist].update({genre: 0 for genre in genres_list})
+                data[cpt_artist].update(dict(TOTAL=1))
+                data[cpt_artist][song.genre] += 1
             else:
-                data[already_added[un_artist] - 1][song.genre] += 1
+                data[already_added[un_artist]][song.genre] += 1
+                data[already_added[un_artist]]["TOTAL"] += 1
     return data
 
 
@@ -244,17 +243,13 @@ def formating_remixer(song_object):
     return remixer_lst
 
 
-"""
-Fonction de formatage des artistes en une liste d'artiste.
-
-La fonction sépare les artistes en fonction chaines de caractères séparatrice dans le champ "Artiste", comme le 'feat'
-qui arrive après le nom de l'artiste principal du morceau (ex : David Guetta feat. Sia - Titanium) ou la croix '×'
-(assez souvent simplifiée en simple "x" ailleurs, c'est juste moi qui préfère l'esthétique de la croix) séparant
-souvant 2 duos pour mieux les distiguer en présence du "&". Ces chaines sont toutes référencées dans le tuple
-"cara_sep_artist", avec souvent une parenthèse les précédant, propre à ma gestion du champ "Artiste" que j'ai adopté
-(les artistes secondaires étant toujours écrit entre parenthèse).
-"""
-
+# Fonction de formatage des artistes en une liste d'artiste.
+# La fonction sépare les artistes en fonction chaines de caractères séparatrice dans le champ "Artiste", comme le 'feat'
+# qui arrive après le nom de l'artiste principal du morceau (ex : David Guetta feat. Sia - Titanium) ou la croix '×'
+# (assez souvent simplifiée en simple "x" ailleurs, c'est juste moi qui préfère l'esthétique de la croix) séparant
+# souvant 2 duos pour mieux les distiguer en présence du "&". Ces chaines sont toutes référencées dans le tuple
+# "cara_sep_artist", avec souvent une parenthèse les précédant, propre à ma gestion du champ "Artiste" que j'ai adopté
+# (les artistes secondaires étant toujours écrit entre parenthèse).
 
 def formating_artist(artist_object):
     artist_txt = artist_object
@@ -298,7 +293,9 @@ def finding_duos(artist_txt):
 
 xml = "../../../Music/iTunes/iTunes Music Library.xml"
 
-base_de_donnes_art = build_artist_db(xml)
+utilisateur = "Dyl_M"
+
+base_de_donnes_art = build_artist_db(xml, utilisateur)
 
 # print(base_de_donnes_art[0])
 
@@ -306,7 +303,7 @@ data_treat = base_de_donnes_art[1:]
 
 entete = list(data_treat[1].keys())
 donnees_list = []
-# print(entete)
+print(entete)
 
 for artist in data_treat:
     value_list = []
@@ -316,9 +313,9 @@ for artist in data_treat:
 
 df = pandas.DataFrame.from_records(donnees_list, columns=entete)
 
-print(df.head())
+print(df)
 
-export_list_to_csv(base_de_donnes_art)
+# export_list_to_csv(base_de_donnes_art)
 
 """ - TESTS - """
 
