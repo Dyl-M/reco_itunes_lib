@@ -1,2 +1,3 @@
-# reco_itunes_lib
- Recommendtions based on iTunes Library
+#  Recommendtions based on iTunes Library
+
+More informations coming soon.
