@@ -78,7 +78,7 @@ weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NLW
               "M.E.G. & N.E.R.A.K.": "DJ M.E.G.", "MEG / NERAK": "DJ M.E.G.", "Dzeko & Torres": "Dzeko",
               "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN",
               "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus",
-              "DBSTF": "D-Block & S-te-Fan", "Maître Gims": "GIMS"}
+              "DBSTF": "D-Block & S-te-Fan", "Maître Gims": "GIMS", "Muzzy": "Muzz"}
 
 # Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
 not_remix_tag = (
@@ -92,7 +92,7 @@ not_remix_tag = (
     '[Remix]', '[SAO Main Theme]', '[Shippuden OST 1]', '[Shippuden OST 2]', '[T&T Festival Trap Remix]',
     '[Trap Remix]', '[UMF 2015 Intro Edit]', '[Ultra 2015 Instrumental Edit]', '[Ultra Edit]', '[VIP Mix]',
     '[VIP Remix]', '[Violin Version]', '[Zen @coustic]', "[Orchestral Cover]", "[Orchestral Suite]",
-    "[Electro House Remix]")
+    "[Electro House Remix]", '[Jazz Cover]')
 
 # Caractère de séparation d'artiste (plus de détail prochainement)
 cara_sep_artist = (
@@ -145,18 +145,6 @@ def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
         print("I/O error")
 
 
-def export_list_to_csv(a_list, csv_name="Artist_Library.csv"):
-    col_names = a_list[0].keys()
-    try:
-        with open(csv_name, 'w', encoding="utf-8-sig", newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=col_names, delimiter=";")
-            writer.writeheader()
-            for data in a_list:
-                writer.writerow(data)
-    except IOError:
-        print("I/O error")
-
-
 # Fonction de visualisation des tests pour exporter une liste en .txt.
 def list_to_txt(db_list, name_txt):
     with open(name_txt, 'w', encoding="utf-8-sig") as text_obj:
@@ -178,29 +166,61 @@ def list_to_txt(db_list, name_txt):
 
 
 def build_artist_db(itunes_xml_path):
-    cpt_artist = 0
-    already_added = {}
-    library = Library(itunes_xml_path).songs.values()
-    genres_list = list_of_genre(library)
-    data = []
-    # Objet de type dictionnaire conservant toutes les musiques avec toutes les métadonnées associées.
+    library = Library(itunes_xml_path).songs.values()  # Récupère toutes les musiques de la bibliothèque
+    genres_list = list_of_genre(library)  # Récupère tous les genres musicaux existant dans la bibliothèque
+    db_df = pandas.DataFrame(columns=["Artist_Name"] + genres_list)  # Créer un DF vide
+    artist_already_added = set()  # Ensemble des artistes ajoutés au DF (de base, vide)
+
+    # song : Objet de "type dictionnaire" conservant toutes les musiques avec toutes les métadonnées associées.
     for song in library:
-        artist_org = formating_artist(song.artist)  # Appel à la fonction de formatage
+
+        # Appel des fonctions de formatage
+        artist_org = formating_artist(song.artist)
         remixer_lst = formating_remixer(song)
         all_artist = sorted(list(set(artist_org + remixer_lst)))
         if song.composer is not None:
             all_artist.append(song.composer)
         all_artist = formating_with_alias(all_artist)
-        for un_artist in all_artist:
-            if un_artist not in already_added:
-                cpt_artist += 1
-                already_added.update({un_artist: cpt_artist})
-                data.append({"Name": un_artist})
-                data[cpt_artist - 1].update({genre: 0 for genre in genres_list})
-                data[cpt_artist - 1][song.genre] += 1
+
+        for an_artist in all_artist:
+            if an_artist not in artist_already_added:
+
+                # Création d'une pour l'artiste
+                new_entry = {"Artist_Name": an_artist}
+                new_entry.update({genres: 0 for genres in genres_list})
+                db_df = db_df.append(new_entry, ignore_index=True)
+                db_df.loc[db_df.Artist_Name == an_artist, song.genre] += 1
+
+                # L'artiste existe désormais dans la DB :
+                artist_already_added.update({an_artist})
+
             else:
-                data[already_added[un_artist] - 1][song.genre] += 1
-    return data
+
+                # Pour les artistes existants dans la DB, +1 pour le genre musicale de la musique traitée.
+                db_df.loc[db_df.Artist_Name == an_artist, song.genre] += 1
+
+    # Re-formatage des noms de colonne (plus d'infos prochainement).
+    col_names = [col_name.split(">")[-1:][0].replace(" ", "", 1) for col_name in list(db_df)]
+    db_df.columns = col_names
+
+    # Mise en ordre alphabétique des colonnes des genres musicaux
+    genres = sorted(col_names[1:])
+    new_col_names = ["Artist_Name"] + genres
+    db_df = db_df[new_col_names]
+
+    # Transtypage en vue de la sommation
+    db_df = db_df.astype({genre: int for genre in genres})
+    db_df["TOTAL"] = db_df.sum(axis=1, numeric_only=True, skipna=True)
+
+    # Normalisation des noms d'artistes pour la mise ordre des lignes
+    db_df["NameNorm"] = db_df.Artist_Name.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode(
+        'utf-8').str.upper()
+
+    # Mise en ordre des lignes et suppression de la colonne de tri "NameNorm"
+    db_df = db_df.sort_values(by=["TOTAL", "NameNorm"], ascending=[0, 1]).reset_index(drop=True)
+    db_df = db_df.drop(labels="NameNorm", axis=1)
+
+    return db_df
 
 
 def list_of_genre(library):
@@ -298,189 +318,12 @@ def finding_duos(artist_txt):
 
 xml = "../../../Music/iTunes/iTunes Music Library.xml"
 
-base_de_donnes_art = build_artist_db(xml)
+artist_per_genre_db = build_artist_db(xml)
 
-# print(base_de_donnes_art[0])
+print(artist_per_genre_db.head(20))
 
-data_treat = base_de_donnes_art[1:]
-
-entete = list(data_treat[1].keys())
-donnees_list = []
-# print(entete)
-
-for artist in data_treat:
-    value_list = []
-    for info in artist.values():
-        value_list.append(info)
-    donnees_list.append(value_list)
-
-df = pandas.DataFrame.from_records(donnees_list, columns=entete)
-
-print(df.head())
-
-export_list_to_csv(base_de_donnes_art)
-
-""" - TESTS - """
-
-# library = Library(xml)
-
-# [Orchestral Suite] / [Cover] / [Ochestral Cover]
-
-# mon_itunes = itunes_lib_xml_to_lst()
-# print(mon_itunes)
-
-# db_track_csv(xml)
-
-# db_artist_csv()
-
-# ch_test = "Tom & Jame × Holl & Rush & Above & Beyond (feat. A Girl & A Gun) | Raven & Kreyn w/ (G)I-DLE"
-
-# for cara_separateur in cara_sep_artist:
-#     ch_test = ch_test.replace(cara_separateur, ", ")
-#
-# tri = []
-#
-# if "(G)I-DLE" in ch_test:
-#     ch_test = ch_test.replace("(G)I-DLE", "")
-#     tri.append("(G)I-DLE")
-#     print(tri)
-#
-# ch_test = ch_test.replace(")", "")
-# tri += ch_test.split(", ")
-# tri.remove("")
-#
-# print(tri)
-#
-# tri2 = []
-# for artist in tri:
-#     if artist not in tri2:
-#         if " & " in artist:
-#             for duo in duos:
-#                 if duo in artist:
-#                     artist = artist.replace(duo, "")
-#                     tri2.append(duo)
-#         else:
-#             tri2.append(artist)
-#
-# print(tri2)
-
-# print(sorted(track_ignore_lst))
-
-# C:\Users\USER\Documents\[!] PROJETS PERSONNELS\[ITUNES] Recommendations based on iTunes library
-# C:\Users\USER\Music\iTunes
-
-# lst_remix = []
-#
-# for song in library.songs.values():
-#     if "[" in song.name:
-#         lst_remix.append(song.name)
-#
-# for song in sorted(lst_remix):
-#     decideur = True
-#     for tag in track_ignore_lst:
-#         if tag in song:
-#             decideur = False
-#     if not decideur:
-#         lst_remix.remove(song)
-#
-# for i, remix in enumerate(lst_remix):
-#     lst_remix[i] = remix[remix.find("["):]
-#
-# lst_remix_corrected = []
-#
-# for remix_corr in lst_remix:
-#     for c_del in cara_del_remix:
-#         if c_del in remix_corr:
-#             remix_corr = remix_corr.replace(c_del, "")
-#     for c_sep in cara_sep_artist:
-#         remix_corr = remix_corr.replace(c_sep, ", ")
-#     remix_corr = remix_corr.split(", ")
-#     if remix_corr not in lst_remix_corrected:
-#         lst_remix_corrected.append(remix_corr)
-#
-# lst_remix_corrected.sort()
-#
-# for remix in lst_remix_corrected:
-#     print(remix)
-
-""" - REJECTED FUNCTIONS |  FONCTIONS REJETEES - """
-
-# def pre_build_db_artist(xml_path):
-#     biblio = Library(xml_path)
-#     artist_step1 = []
-#     artist_step2 = []
-#     artist_step3 = []
-#     for song in biblio.songs.values():
-#         if song.artist not in artist_step1:
-#             artist_step1.append(song.artist)
-#     for element in artist_step1:
-#         if element not in artist_step2:
-#             if "(G)I-DLE" not in element:
-#                 element = element.replace(")", "")
-#             else:
-#                 element = "K/DA (feat. Madison Beer, (G)I-DLE, Jaira Burns"
-#             for cara_sep in cara_sep_artist:
-#                 element = element.replace(cara_sep, ", ")
-#             if ", " in element:
-#                 for artist in element.split(sep=", "):
-#                     if artist not in artist_step2:
-#                         artist_step2.append(artist)
-#             else:
-#                 artist_step2.append(element)
-#     artist_step2.sort()
-#     for artist in artist_step2:
-#         if " & " in artist:
-#             art_corrected = None
-#             for each_duo in duos:
-#                 if each_duo in artist:
-#                     if each_duo not in artist_step3:
-#                         artist_step3.append(each_duo)
-#                     art_corrected = artist.replace(each_duo, "")
-#                     if " & " in art_corrected:
-#                         art_corrected = art_corrected.replace(" & ", "")
-#             if art_corrected is not None and art_corrected != "" and art_corrected not in artist_step3:
-#                 artist_step3.append(art_corrected)
-#         else:
-#             for art_indiv in artist.split(sep=" & "):
-#                 if art_indiv not in artist_step3:
-#                     artist_step3.append(art_indiv)
-#     artist_step3.sort()
-#     return artist_step3
-
-
-# def db_artist_csv(xml_path):
-#     biblio = Library(xml_path)
-#     lst_genres = []
-#     pre_db_list = pre_build_db_artist(xml_path)
-#     for artist in pre_db_list:
-#         if artist in tuple(alias.keys()):
-#             if type(alias[artist]) is list:
-#                 for individual in alias[artist]:
-#                     if individual not in pre_db_list:
-#                         pre_db_list.append(individual)
-#             else:
-#                 if alias[artist] not in pre_db_list:
-#                     pre_db_list.append(alias[artist])
-#     pre_db_list.sort()
-#     print(pre_db_list)
-#     db_list_artist = []
-#     ind = 0
-#     for song in biblio.songs.values():
-#         if song.genre not in lst_genres:
-#             lst_genres.append(song.genre)
-#     lst_genres.sort()
-#     for artist in pre_db_list:
-#         if ind == 0:
-#             temp_dict = {"Artist_ID": "AR0000".format(ind), "Artist": "USER::@Dyl_M"}
-#         else:
-#             temp_dict = {"Artist_ID": "AR{:04d}".format(ind), "Artist": artist}
-#         temp_dict2 = {genre: 0 for genre in lst_genres}
-#         temp_dict.update(temp_dict2)
-#         db_list_artist.append(temp_dict)
-#         ind += 1
-#     print(db_list_artist[0])
-#     # list_to_txt(post_db_list, "test1.txt")
-
+# artist_per_genre_db.to_excel("Artist_Library.xlsx", index=False)
+# artist_per_genre_db.to_csv("Artist_Library.csv", index=False)
 
 """ - ELEMENTS IN /song/ OBJECT | ELEMENTS DANS UN OBJET /songs/ """
 
