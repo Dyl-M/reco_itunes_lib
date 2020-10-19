@@ -1,3 +1,3 @@
-#  Recommendtions based on iTunes Library
+#  Recommendations based on iTunes Library
 
 More informations coming soon.
