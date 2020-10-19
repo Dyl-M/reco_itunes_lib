@@ -209,3 +209,34 @@
 #                 writer.writerow(data)
 #     except IOError:
 #         print("I/O error")
+
+
+# def itunes_lib_xml_to_lst(xml_path):
+#     biblio = Library(xml_path)
+#     itunes_data_ld = []
+#     i = 0
+#     for song in biblio.songs.values():
+#         i += 1
+#         if song.play_count is None:
+#             count = 0
+#         else:
+#             count = song.play_count
+#         itunes_data_ld.append(
+#             {"Track_ID": "T{:04d}".format(i), "Name": song.name, "Album": song.album, "Artist": song.artist,
+#              "Album_Artist": song.album_artist, "Genre": song.genre, "Year": song.year,
+#              "Date_Added": datetime.fromtimestamp(mktime(song.date_added)),
+#              "Group": song.grouping, "Play_Count": count})
+#     return itunes_data_ld
+#
+#
+# def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
+#     lst_data_base = itunes_lib_xml_to_lst(xml_path)
+#     column_names = lst_data_base[0].keys()
+#     try:
+#         with open(csv_name, 'w', encoding="utf-8-sig", newline='') as csvfile:
+#             writer = csv.DictWriter(csvfile, fieldnames=column_names, delimiter=";")
+#             writer.writeheader()
+#             for data in lst_data_base:
+#                 writer.writerow(data)
+#     except IOError:
+#         print("I/O error")

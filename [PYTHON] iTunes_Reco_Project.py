@@ -1,8 +1,8 @@
 from libpytunes import Library
 from datetime import datetime
 from time import mktime
-import csv
 import pandas
+import re
 
 """ - SCRIPT INFORMATRION | INFORMATION SCRIPT - """
 
@@ -55,16 +55,18 @@ duos = ["A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Be
         "Dimitri Vegas & Like Mike", "Dodge & Fuski", "Dzeko & Torres", "Edward Sharpe & The Magnetic Zeros",
         "Gent & Jawns", "Holl & Rush", "Jack & Jordan", "Jaxx & Vega", "Jewelz & Sparks", "Klauss & Turino",
         "Lucas & Steve", "Lush & Simon", "Matisse & Sadko", "Mave & Zac", "Merk & Kremont", "Mr. Belt & Wezol",
-        "Nico & Vinz", "PBH & Jack Shizzle", "Paris & Simo", "Pep & Rash", "Petterson & Findus", "Phats & Small",
+        "Nico & Vinz", "PBH & Jack", "PBH & Jack Shizzle", "Paris & Simo", "Pep & Rash", "Petterson & Findus",
+        "Phats & Small",
         "Rave & Crave", "Raven & Kreyn", "Relanium & Deen West", "Rico & Miella", "Riggi & Piros", "Slips & Slurs",
         "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame", "Vargas & Lagola",
         "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"]
 
 # Ensemble des alias d'artiste "fort" : se rapporte à un autre nom d'artiste actif, ou à un side-project actif ou non
 # déclaré comme arrêté.
-alias = {"Daffy Muffin": "Lucas & Steve", "AREA21": ["Martin Garrix", "Maejor"],
-         "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"], "VIRTUAL SELF": "Porter Robinson", "Streex": "Razihel",
-         "Jack Ü": ["Skrillex", "Diplo"], "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
+alias = {"PBH & Jack": "PBH & Jack Shizzle", "Daffy Muffin": "Lucas & Steve", "AREA21": ["Martin Garrix", "Maejor"],
+         "Ytram": "Martin Garrix", "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"],
+         "VIRTUAL SELF": "Porter Robinson", "Streex": "Razihel", "Jack Ü": ["Skrillex", "Diplo"],
+         "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
          "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"],
          "Casseurs Flowters": ["OrelSan", "Gringe"], "NWYR": "W&W", "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY",
          "Sinnoh Fusion Ensemble": "insaneintherainmusic", "Big Pineapple": "Don Diablo"}
@@ -83,7 +85,7 @@ weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NLW
 # Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
 not_remix_tag = (
     '[2017 Trap Reboot]', '[2K16 Edit]', "[90's Remix]", '[Acoustic]', '[Album Version]', '[Bonus Track]', '[Bonus]',
-    '[CANCELED]', '[Celebration Club Mix]', '[Clip Version]', '[Club Mix]', '[Cover]', '[Dub Mix]',
+    '[CANCELED]', '[Celebration Club Mix]', '[Clip Version]', '[Club Edit]', '[Club Mix]', '[Cover]', '[Dub Mix]',
     '[EDM × Metal Remix]', '[English Version]', '[Eurovision 2015 Live Version]', '[Evian Version]', '[Extended Mix]',
     '[Extended Version]', '[Festival Mix]', '[Festival Version]', '[French Version]', '[GoPro HERO3 Edit]',
     '[Instrumental Edit.]', '[Instrumental Mix]', '[Instrumental]', '[Intro Mix]', '[Japanese Version]',
@@ -93,6 +95,8 @@ not_remix_tag = (
     '[Trap Remix]', '[UMF 2015 Intro Edit]', '[Ultra 2015 Instrumental Edit]', '[Ultra Edit]', '[VIP Mix]',
     '[VIP Remix]', '[Violin Version]', '[Zen @coustic]', "[Orchestral Cover]", "[Orchestral Suite]",
     "[Electro House Remix]", '[Jazz Cover]')
+
+genres_family = {}
 
 # Caractère de séparation d'artiste (plus de détail prochainement)
 cara_sep_artist = (
@@ -107,42 +111,6 @@ cara_del_remix = (
     " 2016 Remix", " Remix", " Mix", " Mashup", " VIP Edit", " Edit")
 
 """ - LOCAL FUNCTIONS | FONCTIONS LOCALES- """
-
-
-# Fonction de base pour transformer la base de données iTunes en une liste de titre avec un identifiant et les
-# informations de base conservées sous la forme de dictionnaires (ID généré automatiquement, Titre, Album, Artiste ,
-# Artiste de l'Album, Genre, Année, Date d'ajout, Groupe (ici label, sinon case vide), Nombre de lecture).
-def itunes_lib_xml_to_lst(xml_path):
-    biblio = Library(xml_path)
-    itunes_data_ld = []
-    i = 0
-    for song in biblio.songs.values():
-        i += 1
-        if song.play_count is None:
-            count = 0
-        else:
-            count = song.play_count
-        itunes_data_ld.append(
-            {"Track_ID": "T{:04d}".format(i), "Name": song.name, "Album": song.album, "Artist": song.artist,
-             "Album_Artist": song.album_artist, "Genre": song.genre, "Year": song.year,
-             "Date_Added": datetime.fromtimestamp(mktime(song.date_added)),
-             "Group": song.grouping, "Play_Count": count})
-    return itunes_data_ld
-
-
-# Fonction d'export d'une base de données iTunes en .csv (fonctionne avec "itunes_lib_xml_to_list" et son format de
-# retour).
-def db_track_csv(xml_path, csv_name="iTunes_Library.csv"):
-    lst_data_base = itunes_lib_xml_to_lst(xml_path)
-    col_names = lst_data_base[0].keys()
-    try:
-        with open(csv_name, 'w', encoding="utf-8-sig", newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=col_names, delimiter=";")
-            writer.writeheader()
-            for data in lst_data_base:
-                writer.writerow(data)
-    except IOError:
-        print("I/O error")
 
 
 # Fonction de visualisation des tests pour exporter une liste en .txt.
@@ -165,12 +133,15 @@ def list_to_txt(db_list, name_txt):
 """
 
 
-def build_artist_db(itunes_xml_path):
+def build_dbs(itunes_xml_path):
+    itunes_media_path = re.sub(r'.*iTunes/.*', 'iTunes Media/Music/', itunes_xml_path)
     library = Library(itunes_xml_path).songs.values()  # Récupère toutes les musiques de la bibliothèque
     genres_list = list_of_genre(library)  # Récupère tous les genres musicaux existant dans la bibliothèque
-    db_df = pandas.DataFrame(columns=["Artist_Name"] + genres_list)  # Créer un DF vide
+    track_db_col = ["Name", "Album", "Artist", "Album_Artist", "Genre", "Year", "Date_Added", "Group",
+                    "Play_Count", "Location", "All_Artists", "Comments"]
+    artist_db = pandas.DataFrame(columns=["Artist_Name"] + genres_list)  # un DF vide pour les artistes
+    track_db = pandas.DataFrame(columns=track_db_col)  # un DF vide pour les titres
     artist_already_added = set()  # Ensemble des artistes ajoutés au DF (de base, vide)
-
     # song : Objet de "type dictionnaire" conservant toutes les musiques avec toutes les métadonnées associées.
     for song in library:
 
@@ -180,16 +151,37 @@ def build_artist_db(itunes_xml_path):
         all_artist = sorted(list(set(artist_org + remixer_lst)))
         if song.composer is not None:
             all_artist.append(song.composer)
+            track_composer = song.composer
+        else:
+            track_composer = ""
         all_artist = formating_with_alias(all_artist)
 
+        if song.play_count is None:
+            count = 0
+        else:
+            count = song.play_count
+
+        track_location = re.sub(r".*{}".format(itunes_media_path), itunes_media_path, song.location)
+        track_artists = ", ".join(all_artist)
+
+        track_new_entry = {"Name": song.name, "Album": song.album, "Artist": song.artist,
+                           "Album_Artist": song.album_artist, "Genre": re.sub(r".*> ", "", song.genre),
+                           "Year": song.year, "Composer": track_composer,
+                           "Date_Added": datetime.fromtimestamp(mktime(song.date_added)),
+                           "Group": song.grouping, "Play_Count": count, "Location": track_location,
+                           "All_Artists": track_artists, "Comments": song.comments}
+
+        track_db = track_db.append(track_new_entry, ignore_index=True)
+
         for an_artist in all_artist:
+
             if an_artist not in artist_already_added:
 
                 # Création d'une pour l'artiste
-                new_entry = {"Artist_Name": an_artist}
-                new_entry.update({genres: 0 for genres in genres_list})
-                db_df = db_df.append(new_entry, ignore_index=True)
-                db_df.loc[db_df.Artist_Name == an_artist, song.genre] += 1
+                artist_new_entry = {"Artist_Name": an_artist}
+                artist_new_entry.update({genres: 0 for genres in genres_list})
+                artist_db = artist_db.append(artist_new_entry, ignore_index=True)
+                artist_db.loc[artist_db.Artist_Name == an_artist, song.genre] += 1
 
                 # L'artiste existe désormais dans la DB :
                 artist_already_added.update({an_artist})
@@ -197,30 +189,32 @@ def build_artist_db(itunes_xml_path):
             else:
 
                 # Pour les artistes existants dans la DB, +1 pour le genre musicale de la musique traitée.
-                db_df.loc[db_df.Artist_Name == an_artist, song.genre] += 1
+                artist_db.loc[artist_db.Artist_Name == an_artist, song.genre] += 1
 
     # Re-formatage des noms de colonne (plus d'infos prochainement).
-    col_names = [col_name.split(">")[-1:][0].replace(" ", "", 1) for col_name in list(db_df)]
-    db_df.columns = col_names
+    col_names = [re.sub(r".*> ", "", col_name) for col_name in list(artist_db)]
+    artist_db.columns = col_names
 
     # Mise en ordre alphabétique des colonnes des genres musicaux
     genres = sorted(col_names[1:])
     new_col_names = ["Artist_Name"] + genres
-    db_df = db_df[new_col_names]
+    artist_db = artist_db[new_col_names]
 
     # Transtypage en vue de la sommation
-    db_df = db_df.astype({genre: int for genre in genres})
-    db_df["TOTAL"] = db_df.sum(axis=1, numeric_only=True, skipna=True)
+    artist_db = artist_db.astype({genre: int for genre in genres})
+    artist_db["TOTAL"] = artist_db.sum(axis=1, numeric_only=True, skipna=True)
 
     # Normalisation des noms d'artistes pour la mise ordre des lignes
-    db_df["NameNorm"] = db_df.Artist_Name.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode(
+    artist_db["NameNorm"] = artist_db.Artist_Name.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode(
         'utf-8').str.upper()
 
     # Mise en ordre des lignes et suppression de la colonne de tri "NameNorm"
-    db_df = db_df.sort_values(by=["TOTAL", "NameNorm"], ascending=[0, 1]).reset_index(drop=True)
-    db_df = db_df.drop(labels="NameNorm", axis=1)
+    artist_db = artist_db.sort_values(by=["TOTAL", "NameNorm"], ascending=[0, 1]).reset_index(drop=True)
+    artist_db = artist_db.drop(labels="NameNorm", axis=1)
 
-    return db_df
+    dbs = {"A_DB": artist_db, "T_DB": track_db}
+
+    return dbs
 
 
 def list_of_genre(library):
@@ -318,12 +312,16 @@ def finding_duos(artist_txt):
 
 xml = "../../../Music/iTunes/iTunes Music Library.xml"
 
-artist_per_genre_db = build_artist_db(xml)
+the_dbs = build_dbs(xml)
 
-print(artist_per_genre_db.head(20))
+print(the_dbs["A_DB"].head(20))
+print(the_dbs["T_DB"].head(20))
 
-# artist_per_genre_db.to_excel("Artist_Library.xlsx", index=False)
-# artist_per_genre_db.to_csv("Artist_Library.csv", index=False)
+the_dbs["A_DB"].to_excel("Artist_DB.xlsx", index=False)
+the_dbs["A_DB"].to_csv("Artist_DB.csv", index=False)
+
+the_dbs["T_DB"].to_excel("Track_DB.xlsx", index=False)
+the_dbs["T_DB"].to_csv("Track_DB.csv", index=False)
 
 """ - ELEMENTS IN /song/ OBJECT | ELEMENTS DANS UN OBJET /songs/ """
 
@@ -337,8 +335,9 @@ print(artist_per_genre_db.head(20))
 # play_count = None(Integer)
 # grouping = None(String)
 # composer = None(String)
-
 # comments = None(String)
+# location = None(String) # location_escaped = None(String)
+
 # persistent_id(String)
 # kind = None(String)
 # size = None(Integer)
@@ -352,8 +351,6 @@ print(artist_per_genre_db.head(20))
 # sample_rate = None(Integer)
 # rating = None(Integer)
 # album_rating = None(Integer)
-# location = None(String)
-# location_escaped = None(String)
 # compilation = False(Boolean)
 # lastplayed = None(Time)
 # skip_count = None(Integer)
