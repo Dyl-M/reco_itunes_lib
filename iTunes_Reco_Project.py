@@ -56,20 +56,19 @@ duos = ["A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Be
         "Gent & Jawns", "Holl & Rush", "Jack & Jordan", "Jaxx & Vega", "Jewelz & Sparks", "Klauss & Turino",
         "Lucas & Steve", "Lush & Simon", "Matisse & Sadko", "Mave & Zac", "Merk & Kremont", "Mr. Belt & Wezol",
         "Nico & Vinz", "PBH & Jack", "PBH & Jack Shizzle", "Paris & Simo", "Pep & Rash", "Petterson & Findus",
-        "Phats & Small",
-        "Rave & Crave", "Raven & Kreyn", "Relanium & Deen West", "Rico & Miella", "Riggi & Piros", "Slips & Slurs",
-        "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame", "Vargas & Lagola",
-        "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"]
+        "Phats & Small", "Rave & Crave", "Raven & Kreyn", "Relanium & Deen West", "Rico & Miella", "Riggi & Piros",
+        "Slips & Slurs", "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame",
+        "Vargas & Lagola", "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"]
 
 # Ensemble des alias d'artiste "fort" : se rapporte à un autre nom d'artiste actif, ou à un side-project actif ou non
 # déclaré comme arrêté.
 alias = {"PBH & Jack": "PBH & Jack Shizzle", "Daffy Muffin": "Lucas & Steve", "AREA21": ["Martin Garrix", "Maejor"],
-         "Ytram": "Martin Garrix", "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"],
+         "Ytram": "Martin Garrix", "Major Lazer": ["Diplo", "Walshy Fire", "Ape Drums"], "Big Pineapple": "Don Diablo",
          "VIRTUAL SELF": "Porter Robinson", "Streex": "Razihel", "Jack Ü": ["Skrillex", "Diplo"],
-         "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"],
-         "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"],
-         "Casseurs Flowters": ["OrelSan", "Gringe"], "NWYR": "W&W", "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY",
-         "Sinnoh Fusion Ensemble": "insaneintherainmusic", "Big Pineapple": "Don Diablo"}
+         "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"], "Bastille": "Dan Smith", "Dan Smith": "Bastille",
+         "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"], "NWYR": "W&W",
+         "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY", "Casseurs Flowters": ["OrelSan", "Gringe"],
+         "Sinnoh Fusion Ensemble": "insaneintherainmusic"}
 
 # Ensemble des alias secondaires dits "faibles" : se rapporte à un autre nom d'artiste dans la base de données ayant
 # peut de valeur pour l'analyse ou n'étant plus actif donc plus intéressant à suivre.
@@ -94,7 +93,7 @@ not_remix_tag = (
     '[Remix]', '[SAO Main Theme]', '[Shippuden OST 1]', '[Shippuden OST 2]', '[T&T Festival Trap Remix]',
     '[Trap Remix]', '[UMF 2015 Intro Edit]', '[Ultra 2015 Instrumental Edit]', '[Ultra Edit]', '[VIP Mix]',
     '[VIP Remix]', '[Violin Version]', '[Zen @coustic]', "[Orchestral Cover]", "[Orchestral Suite]",
-    "[Electro House Remix]", '[Jazz Cover]')
+    "[Electro House Remix]", '[Jazz Cover]', "[2020 Edit]")
 
 genres_family = {}
 
