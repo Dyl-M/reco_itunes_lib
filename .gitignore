@@ -353,3 +353,5 @@ MigrationBackup/
 .ionide/
 
 .idea/
+/Comparaison.xlsx
+/Rejected_Functions_and_Test.py

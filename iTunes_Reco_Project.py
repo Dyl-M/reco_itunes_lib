@@ -58,7 +58,7 @@ duos = ["A Girl & A Gun", "ANDY & FILIPE SILVEIRA", "ARICK & DUNNO", "Above & Be
         "Nico & Vinz", "PBH & Jack", "PBH & Jack Shizzle", "Paris & Simo", "Pep & Rash", "Petterson & Findus",
         "Phats & Small", "Rave & Crave", "Raven & Kreyn", "Relanium & Deen West", "Rico & Miella", "Riggi & Piros",
         "Slips & Slurs", "Sunnery James & Ryan Marciano", "Tegan & Sara", "The Flexican & FS Green", "Tom & Jame",
-        "Vargas & Lagola", "Volt & State", "W&W", "Will & Tim", "nFiX & Candice"]
+        "Vargas & Lagola", "Volt & State", "W&W", "Will & Tim", "nFiX & Candice", "Super8 & Tab"]
 
 # Ensemble des alias d'artiste "fort" : se rapporte à un autre nom d'artiste actif, ou à un side-project actif ou non
 # déclaré comme arrêté.
@@ -67,8 +67,9 @@ alias = {"PBH & Jack": "PBH & Jack Shizzle", "Daffy Muffin": "Lucas & Steve", "A
          "VIRTUAL SELF": "Porter Robinson", "Streex": "Razihel", "Jack Ü": ["Skrillex", "Diplo"],
          "Axwell Λ Ingrosso": ["Sebastian Ingrosso", "Axwell"], "Bastille": "Dan Smith", "Dan Smith": "Bastille",
          "Swedish House Mafia": ["Axwell", "Sebastian Ingrosso", "Steve Angello"], "NWYR": "W&W",
-         "Shindeai": "STARRYSKY", "Sasha": "STARRYSKY", "Casseurs Flowters": ["OrelSan", "Gringe"],
-         "Sinnoh Fusion Ensemble": "insaneintherainmusic"}
+         "Shindeai": ["STARRYSKY", "Tai Wuang"], "Sasha": "STARRYSKY", "Casseurs Flowters": ["OrelSan", "Gringe"],
+         "Sinnoh Fusion Ensemble": "insaneintherainmusic", "Destroid": ["Excision", "Far Too Loud"],
+         "Jeffrey Sutorius": "Dash Berlin", "Jaxxwell": ["Hardwell", "Blasterjaxx"]}
 
 # Ensemble des alias secondaires dits "faibles" : se rapporte à un autre nom d'artiste dans la base de données ayant
 # peut de valeur pour l'analyse ou n'étant plus actif donc plus intéressant à suivre.
@@ -77,9 +78,11 @@ weak_alias = {"AvB": "Armin van Buuren", "Rising Star": "Armin van Buuren", "NLW
               "Ravitez": "Chico Rose", "GRX": "Martin Garrix", "Kerafix & Vultaire": "KEVU",
               "Lush & Simon": ["Simon Says", "Zen/It"], "Matthew Ros": "MWRS", "Grant Bowtie": "Grant",
               "M.E.G. & N.E.R.A.K.": "DJ M.E.G.", "MEG / NERAK": "DJ M.E.G.", "Dzeko & Torres": "Dzeko",
-              "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN",
+              "X-Teef": "Stemalø", "Paris & Simo": "Prince Paris", "The Eden Project": "EDEN", "Astra": "ASHWYN",
               "Slips & Slurs": "Slippy", "Vorwerk": "Maarten Vorwerk", "Will & Tim": "NewGamePlus",
-              "DBSTF": "D-Block & S-te-Fan", "Maître Gims": "GIMS", "Muzzy": "Muzz"}
+              "DBSTF": "D-Block & S-te-Fan", "Maître Gims": "GIMS", "Muzzy": "MUZZ", "Richard Caddock": "Keepsake",
+              "Joey Rumble": "Modern Revolt", "Michelle McKenna": "Michelle Platnum", "Ben Lepper": "Cloud Cage",
+              "Juventa": "Jordin Post"}
 
 # Liste d'élément STRING permettant de définir si une piste n'est pas un remix.
 not_remix_tag = (
@@ -121,7 +124,7 @@ def list_to_txt(db_list, name_txt):
 
 
 """
-# Fonction de nettoyage et de construction d'une base de donnéees d'artiste.
+# Fonction de nettoyage et de construction d'une base de données d'artiste.
 
 # OBJECTIFS :
 #   - Séparer convenablement chaque artiste sur une même piste.
